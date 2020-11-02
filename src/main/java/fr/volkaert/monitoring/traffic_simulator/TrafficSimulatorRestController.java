@@ -150,7 +150,7 @@ public class TrafficSimulatorRestController {
             String[] chainItems = chain.split(",");
 
             // Get the fist item the chain of services to call
-            String firstChainItem = chainItems[0];
+            String firstChainItem = chainItems[0].trim();
 
             // Remove leading '(' and trailing ')'
             if (firstChainItem.startsWith("("))
@@ -162,7 +162,7 @@ public class TrafficSimulatorRestController {
             String[] firstChainItemArgs = firstChainItem.split(";");
 
             // Get the name of the next service to call
-            String serviceNameToCall = firstChainItemArgs[0].toUpperCase();
+            String serviceNameToCall = firstChainItemArgs[0].toUpperCase().trim();
             if (StringUtils.isEmpty(serviceNameToCall))
                 serviceNameToCall = "A";
             else if ("*".equals(serviceNameToCall))
@@ -173,21 +173,21 @@ public class TrafficSimulatorRestController {
             String serviceUrlToCall = serviceUrls.get(indexOfServiceNameToCall);
 
             // Get the HTTP verb to use to call the next service
-            String httpVerbToUseForTheCallee = firstChainItemArgs.length >= 2 ? firstChainItemArgs[1].toUpperCase() : "GET";
+            String httpVerbToUseForTheCallee = firstChainItemArgs.length >= 2 ? firstChainItemArgs[1].toUpperCase().trim() : "GET";
             if (StringUtils.isEmpty(httpVerbToUseForTheCallee))
                 httpVerbToUseForTheCallee = "GET";
             else if ("*".equals(httpVerbToUseForTheCallee))
                 httpVerbToUseForTheCallee = httpVerbs.get(getRandomNumberBetween(0, httpVerbs.size()));
 
             // Get the pause parameter to use to call the next service
-            String pauseToUseForTheCallee = firstChainItemArgs.length >= 3 ? firstChainItemArgs[2] : DEFAULT_PAUSE;
+            String pauseToUseForTheCallee = firstChainItemArgs.length >= 3 ? firstChainItemArgs[2].trim() : DEFAULT_PAUSE;
             if (StringUtils.isEmpty(pauseToUseForTheCallee))
                 pauseToUseForTheCallee = DEFAULT_PAUSE;
             else if ("*".equals(pauseToUseForTheCallee))
                 pauseToUseForTheCallee = Integer.toString(getRandomNumberBetween(0, 2000));
 
             // Get the status parameter to use to call the next service
-            String statusToUseForTheCallee = firstChainItemArgs.length >= 4 ? firstChainItemArgs[3] : "200";
+            String statusToUseForTheCallee = firstChainItemArgs.length >= 4 ? firstChainItemArgs[3].trim() : "200";
             if (StringUtils.isEmpty(statusToUseForTheCallee))
                 statusToUseForTheCallee = "200";
             else if ("*".equals(statusToUseForTheCallee))
@@ -227,6 +227,11 @@ public class TrafficSimulatorRestController {
         HttpStatus httpStatus = HttpStatus.valueOf(Integer.parseInt(status));
         String helloMessage = String.format("%s Hello from %s; returning status code %s", Instant.now(), getHostName(), httpStatus);
         if (httpStatus.isError()) {
+            try {
+                throw new RuntimeException("Simulation of an error to ensure that multi-lines logs are handled properly");
+            } catch (Exception ex) {
+                LOGGER.error("ERROR: " + ex.getMessage(), ex);
+            }
             LOGGER.error(helloMessage);
             // Generate a metric to count the number of error HTTP status
             Counter errorHttpStatusCount = meterRegistry.counter("myapp_error_http_status_count_total", "http_status", status);
